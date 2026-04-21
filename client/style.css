@@ -1,0 +1,179 @@
+/* ── RESET & BASE ────────────────────────── */
+*, *::before, *::after { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #111;
+  color: #fff;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── TOP BAR ─────────────────────────────── */
+#top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: #1a1a1a;
+  border-bottom: 1px solid #333;
+  height: 50px;
+}
+
+#room-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #aaa;
+}
+
+#error-msg {
+  display: none;
+  background: #c0392b;
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* ── MAIN AREA ───────────────────────────── */
+#main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── VIDEO GRID ──────────────────────────── */
+#video-grid {
+  flex: 1;
+  display: grid;
+  gap: 12px;
+  padding: 15px;
+  background: #111;
+  align-items: center;
+  justify-items: center;
+  overflow-y: auto;
+}
+
+/* ── TILES ───────────────────────────────── */
+.tile {
+  position: relative;
+  background: #222;
+  border-radius: 12px;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 16/9;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  border: 2px solid #333;
+}
+
+.tile video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tile video.video-off {
+  visibility: hidden;
+}
+
+.tile-label {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: white;
+}
+
+.tile-icon {
+  position: absolute;
+  background: rgba(192, 57, 43, 0.8);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.mute-icon { bottom: 10px; right: 10px; }
+.cam-icon  { top: 10px; right: 10px; }
+.hidden { display: none !important; }
+
+/* ── SIDEBAR ─────────────────────────────── */
+#sidebar {
+  width: 250px;
+  background: #1a1a1a;
+  border-left: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+}
+
+#sidebar-title {
+  padding: 15px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  border-bottom: 1px solid #333;
+}
+
+#participants-list {
+  list-style: none;
+  flex: 1;
+  overflow-y: auto;
+}
+
+#participants-list li {
+  padding: 12px 15px;
+  font-size: 14px;
+  border-bottom: 1px solid #222;
+  color: #ddd;
+}
+
+/* ── CONTROL BAR ─────────────────────────── */
+#controls {
+  height: 80px;
+  background: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  border-top: 1px solid #333;
+}
+
+.ctrl-btn {
+  background: #333;
+  border: none;
+  border-radius: 12px;
+  padding: 8px 16px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 80px;
+}
+
+.ctrl-btn:hover { background: #444; }
+
+.ctrl-btn .icon { font-size: 20px; margin-bottom: 4px; }
+.ctrl-btn .label { font-size: 10px; color: #aaa; text-transform: uppercase; }
+
+.ctrl-btn.active {
+  background: #c0392b;
+}
+
+#btn-leave { background: #c0392b; }
+#btn-leave:hover { background: #e74c3c; }

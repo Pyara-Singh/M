@@ -1,15 +1,42 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>SFU Call</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gemini Meet | SFU Video Call</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h2>Mediasoup Call</h2>
-<div id="videos"></div>
+  <header id="top-bar">
+    <div id="room-label">Connecting...</div>
+    <div id="error-msg"></div>
+  </header>
 
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script type="module" src="./app.js"></script>
+  <main id="main">
+    <section id="video-grid"></section>
 
+    <aside id="sidebar">
+      <div id="sidebar-title">Participants</div>
+      <ul id="participants-list"></ul>
+    </aside>
+  </main>
+
+  <footer id="controls">
+    <button class="ctrl-btn" id="btn-mute">
+      <span class="icon">🎤</span>
+      <span class="label">Mute</span>
+    </button>
+    <button class="ctrl-btn" id="btn-cam">
+      <span class="icon">📷</span>
+      <span class="label">Stop Cam</span>
+    </button>
+    <button class="ctrl-btn" id="btn-leave">
+      <span class="icon">📵</span>
+      <span class="label">Leave</span>
+    </button>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
