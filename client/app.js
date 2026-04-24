@@ -4,8 +4,8 @@ import { io } from "socket.io-client";
 // ======================
 // CONFIG
 // ======================
-const SFU_URL   = "http://localhost:3001";
-const GO_URL    = "http://localhost:8080";
+const SFU_URL = import.meta.env.VITE_SFU_URL || "http://localhost:3001";
+const GO_URL = import.meta.env.VITE_GO_URL || "http://localhost:8080";
 
 // ======================
 // STATE
