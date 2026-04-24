@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: lesgomeet_api
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  sfu:
+    build:
+      context: ./sfu
+      dockerfile: Dockerfile
+    container_name: lesgomeet_sfu
+    ports:
+      - "3001:3001"
+      - "40000-49999:40000-49999/udp"
+      - "40000-49999:40000-49999/tcp"
+    environment:
+      - ANNOUNCED_IP=host.docker.internal
+    restart: unless-stopped
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        VITE_SFU_URL: http://localhost:3001
+        VITE_GO_URL: http://localhost:8080
+    container_name: lesgomeet_client
+    ports:
+      - "8082:80"
+    restart: unless-stopped
