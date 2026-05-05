@@ -4,8 +4,8 @@ import { io } from "socket.io-client";
 // ======================
 // CONFIG
 // ======================
-const SFU_URL = import.meta.env.VITE_SFU_URL || "http://localhost:3001";
-const GO_URL = import.meta.env.VITE_GO_URL || "http://localhost:8080";
+const SFU_URL = import.meta.env.VITE_SFU_URL || "https://m2-f668.onrender.com";
+const GO_URL = import.meta.env.VITE_GO_URL || "https://go7273h.netlify.app";
 
 // ======================
 // STATE
@@ -20,7 +20,7 @@ let audioProducer = null;
 let videoProducer = null;
 
 let audioMuted = false;
-let videoOff   = false;
+let videoOff = false;
 
 const peerTiles = {};
 const producerToPeer = {};
@@ -121,7 +121,7 @@ async function start() {
     localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
     const tile = createTile("local", displayName, true);
     localStream.getTracks().forEach(t => tile.stream.addTrack(t));
-    
+
     await joinAndPublish();
   } catch (err) {
     console.error("Start failed:", err);
@@ -209,14 +209,14 @@ async function consume(producerId) {
 
   const consumer = await consumerTransport.consume(data);
   const peerId = producerToPeer[producerId];
-  
+
   if (peerTiles[peerId]) {
     peerTiles[peerId].stream.addTrack(consumer.track);
   }
 
   consumer.on("trackended", () => consumedProducers.delete(producerId));
   consumer.on("transportclose", () => consumedProducers.delete(producerId));
-  
+
   socket.emit("resumeConsumer", { consumerId: consumer.id });
 }
 

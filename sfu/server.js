@@ -20,9 +20,9 @@ async function getOrCreateRouter(roomId) {
     mediaCodecs: [
       { kind: "audio", mimeType: "audio/opus", clockRate: 48000, channels: 2 },
       { kind: "video", mimeType: "video/VP8", clockRate: 90000 },
-      { 
-        kind: "video", 
-        mimeType: "video/H264", 
+      {
+        kind: "video",
+        mimeType: "video/H264",
         clockRate: 90000,
         parameters: { "packetization-mode": 1, "profile-level-id": "42e01f", "level-asymmetry-allowed": 1 }
       }
@@ -53,11 +53,11 @@ async function getOrCreateRouter(roomId) {
 // ======================
 // DATA STRUCTURES
 // ======================
-const rooms      = {}; // roomId -> { peers: Set<socketId> }
-const peers      = {}; // socketId -> { ...peerData }
+const rooms = {}; // roomId -> { peers: Set<socketId> }
+const peers = {}; // socketId -> { ...peerData }
 const transports = {}; // transportId -> transport
-const producers  = {}; // producerId -> producer
-const consumers  = {}; // consumerId -> consumer
+const producers = {}; // producerId -> producer
+const consumers = {}; // consumerId -> consumer
 
 // ======================
 // HELPERS
@@ -113,7 +113,7 @@ async function cleanupPeer(socketId) {
 // SOCKET LOGIC
 // ======================
 io.on("connection", (socket) => {
-  
+
   socket.on("joinRoom", async ({ roomId, displayName }, callback) => {
     try {
       if (!rooms[roomId]) rooms[roomId] = { peers: new Set() };
@@ -124,10 +124,10 @@ io.on("connection", (socket) => {
         roomId,
         displayName: displayName || `User-${socket.id.slice(0, 4)}`,
         transportIds: new Set(),
-        producerIds:  new Set(),
-        consumerIds:  new Set(),
-        audioMuted:   false,
-        videoOff:     false
+        producerIds: new Set(),
+        consumerIds: new Set(),
+        audioMuted: false,
+        videoOff: false
       };
 
       socket.join(roomId);
@@ -135,7 +135,7 @@ io.on("connection", (socket) => {
 
       const existingPeers = roomPeerList(roomId).filter(p => p.id !== socket.id);
       const existingProducers = [];
-      
+
       for (const peerId of rooms[roomId].peers) {
         if (peerId === socket.id) continue;
         const p = peers[peerId];
@@ -204,7 +204,7 @@ io.on("connection", (socket) => {
     try {
       const peer = getPeer(socket.id);
       const transport = transports[transportId];
-      
+
       const producer = await transport.produce({ kind, rtpParameters, appData });
       producer.on("transportclose", () => {
         peer.producerIds.delete(producer.id);
@@ -286,4 +286,4 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3001, () => console.log("SFU running on :3001"));
+server.listen(3005, () => console.log("SFU running on :3005"));
