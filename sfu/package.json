@@ -6,6 +6,7 @@
     "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "node server.js"
+    
   },
   "keywords": [],
   "author": "",
@@ -16,4 +17,5 @@
     "mediasoup": "^3.19.19",
     "socket.io": "^4.8.3"
   }
+  
 }
