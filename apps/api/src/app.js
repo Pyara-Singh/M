@@ -5,6 +5,18 @@ const { signJoinToken } = require('../../../packages/contracts/join-token');
 
 function createApp(pool) {
   const app = express();
+  const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173').split(',').map(x => x.trim());
+  app.use((req, res, next) => {
+    const origin = req.get('origin');
+    if (origin && allowedOrigins.includes(origin)) {
+      res.set('Access-Control-Allow-Origin', origin);
+      res.set('Vary', 'Origin');
+      res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+    }
+    if (req.method === 'OPTIONS') return res.sendStatus(origin && allowedOrigins.includes(origin) ? 204 : 403);
+    next();
+  });
   app.use(express.json({ limit: '16kb' }));
   app.get('/health', async (_req, res) => {
     try { await pool.query('SELECT 1'); res.json({ ready: true }); }
@@ -60,6 +72,20 @@ function createApp(pool) {
       const { join_code, display_name } = result.rows[0];
       const token = signJoinToken({ roomId: join_code, userId: req.userId, displayName: display_name.slice(0, 32), role: 'host' }, process.env.JOIN_TOKEN_SECRET);
       res.json({ token, roomId: join_code, expiresIn: 300 });
+    } catch (error) { next(error); }
+  });
+  // A meeting code is a bearer invitation: anyone who knows it and has an account can join.
+  app.post('/v1/meeting-joins', authenticate, async (req, res, next) => {
+    const code = req.body?.code;
+    if (typeof code !== 'string' || !/^[A-Za-z0-9_-]{16}$/.test(code)) return res.status(400).json({ error: 'Invalid meeting code' });
+    if (!process.env.JOIN_TOKEN_SECRET || process.env.JOIN_TOKEN_SECRET.length < 32) return res.status(503).json({ error: 'Join tokens are not configured' });
+    try {
+      const result = await pool.query('SELECT m.join_code, m.owner_id, u.display_name FROM meetings m CROSS JOIN users u WHERE m.join_code = $1 AND u.id = $2', [code, req.userId]);
+      if (!result.rows[0]) return res.status(404).json({ error: 'Meeting not found' });
+      const row = result.rows[0];
+      const displayName = row.display_name.slice(0, 32);
+      const token = signJoinToken({ roomId: row.join_code, userId: req.userId, displayName, role: row.owner_id === req.userId ? 'host' : 'participant' }, process.env.JOIN_TOKEN_SECRET);
+      res.json({ token, roomId: row.join_code, displayName, expiresIn: 300 });
     } catch (error) { next(error); }
   });
   app.use((err, _req, res, _next) => {

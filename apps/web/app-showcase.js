@@ -3,6 +3,31 @@ import { io } from "socket.io-client";
 
 const $ = (selector) => document.querySelector(selector);
 const SFU_URL = import.meta.env.VITE_SFU_URL || "http://localhost:3001";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3002";
+let sessionToken = sessionStorage.getItem("lesgomeet.session") || "";
+let joinToken;
+async function api(path, body) {
+  const response = await fetch(`${API_URL}${path}`, { method: "POST", headers: { "Content-Type": "application/json", ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {}) }, body: JSON.stringify(body) });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Request failed");
+  return data;
+}
+const authSection = document.createElement("section");
+authSection.className = "join-card";
+authSection.innerHTML = `<h2>Account</h2><form id="auth-form"><label>Name (for registration)<input id="auth-name" maxlength="80" autocomplete="name"></label><label>Email<input id="auth-email" type="email" autocomplete="email" required></label><label>Password<input id="auth-password" type="password" minlength="12" maxlength="128" autocomplete="current-password" required></label><button type="submit">Sign in</button><button type="button" id="register">Create account</button></form><button type="button" id="create-meeting">Create meeting</button><button type="button" id="sign-out">Sign out</button>`;
+document.querySelector("#lobby .intro").append(authSection);
+$("#name").required = false;
+$("#name").closest("label").hidden = true;
+$("#join-form > p").textContent = "Sign in, then enter a meeting code to join.";
+$("#room").value = new URLSearchParams(location.search).get("room") || "";
+async function login() {
+  const data = await api("/v1/auth/login", { email: $("#auth-email").value, password: $("#auth-password").value });
+  sessionToken = data.token; sessionStorage.setItem("lesgomeet.session", sessionToken); $("#auth-password").value = ""; status("Signed in");
+}
+$("#auth-form").onsubmit = async event => { event.preventDefault(); try { await login(); } catch (error) { status(error.message, true); } };
+$("#register").onclick = async () => { try { await api("/v1/auth/register", { email: $("#auth-email").value, password: $("#auth-password").value, displayName: $("#auth-name").value }); await login(); } catch (error) { status(error.message, true); } };
+$("#create-meeting").onclick = async () => { try { const meeting = await api("/v1/meetings", { title: "Meeting" }); $("#room").value = meeting.join_code; status("Meeting created. Join using the code shown."); } catch (error) { status(error.message, true); } };
+$("#sign-out").onclick = async () => { try { if (sessionToken) await api("/v1/auth/logout", {}); sessionToken = ""; sessionStorage.removeItem("lesgomeet.session"); status("Signed out"); } catch (error) { status(error.message, true); } };
 const socket = io(SFU_URL, { autoConnect: false, reconnectionAttempts: 5 });
 const tiles = new Map();
 const peers = new Map();
@@ -28,9 +53,11 @@ loadDevices().catch(() => {});
 $("#join-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   displayName = $("#name").value.trim();
-  roomId = $("#room").value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-");
-  if (roomId.length < 3) return status("Use at least 3 letters in the room name.", true);
+  roomId = $("#room").value.trim();
+  if (!sessionToken) return status("Sign in before joining a meeting.", true);
   try {
+    const admission = await api("/v1/meeting-joins", { code: roomId });
+    roomId = admission.roomId; displayName = admission.displayName; joinToken = admission.token;
     status("Preparing your camera…");
     localStream = await navigator.mediaDevices.getUserMedia({
       video: { deviceId: $("#camera").value ? { exact: $("#camera").value } : undefined, width: { ideal: 1280 }, height: { ideal: 720 } },
@@ -42,14 +69,14 @@ $("#join-form").addEventListener("submit", async (event) => {
     $("#lobby").classList.add("hidden"); $("#call").classList.remove("hidden"); $("#room-title").textContent = roomId;
     addTile("local", displayName, localStream, true);
     await join();
-  } catch (error) { console.error(error); status(error.message || "Allow camera and microphone access to join.", true); }
+  } catch (error) { socket.disconnect(); localStream?.getTracks().forEach(track => track.stop()); $("#call").classList.add("hidden"); $("#lobby").classList.remove("hidden"); tiles.get("local")?.element.remove(); tiles.delete("local"); console.error(error); status(error.message || "Unable to join.", true); }
 });
 
 async function join() {
   await new Promise((resolve, reject) => {
     socket.once("connect", resolve); socket.once("connect_error", reject); socket.connect();
   });
-  const room = await call("joinRoom", { roomId, displayName });
+  const room = await call("joinRoom", { roomId, displayName, token: joinToken });
   device = new mediasoupClient.Device();
   await device.load({ routerRtpCapabilities: room.rtpCapabilities });
   await createSendTransport(); await createReceiveTransport(); await publishLocalTracks();

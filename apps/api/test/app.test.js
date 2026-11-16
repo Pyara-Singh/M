@@ -26,3 +26,25 @@ test('meeting creation validates input and persists a generated code', async () 
     assert.equal(saved[3], 'owner');
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
+
+test('authenticated users can exchange a meeting code for a scoped token', async () => {
+  const oldSecret = process.env.JOIN_TOKEN_SECRET;
+  process.env.JOIN_TOKEN_SECRET = 'x'.repeat(32);
+  const pool = { query: async (sql) => {
+    if (sql.startsWith('SELECT user_id')) return { rows: [{ user_id: 'guest' }] };
+    if (sql.startsWith('SELECT m.join_code')) return { rows: [{ join_code: 'abcdefghijklmnop', owner_id: 'host', display_name: 'Guest' }] };
+    throw new Error('Unexpected query');
+  } };
+  const server = createApp(pool).listen(0, '127.0.0.1');
+  await new Promise(resolve => server.once('listening', resolve));
+  try {
+    const response = await fetch(`http://127.0.0.1:${server.address().port}/v1/meeting-joins`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${'a'.repeat(43)}` }, body: JSON.stringify({ code: 'abcdefghijklmnop' }) });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    const { verifyJoinToken } = require('../../../packages/contracts/join-token');
+    assert.equal(verifyJoinToken(body.token, process.env.JOIN_TOKEN_SECRET, body.roomId).role, 'participant');
+  } finally {
+    if (oldSecret === undefined) delete process.env.JOIN_TOKEN_SECRET; else process.env.JOIN_TOKEN_SECRET = oldSecret;
+    await new Promise(resolve => server.close(resolve));
+  }
+});
