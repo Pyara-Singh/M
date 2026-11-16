@@ -1,8 +1,0 @@
-{
-  "name": "lesgomeet",
-  "main": "apps/signaling/src/index.js",
-  "compatibility_date": "2026-08-22",
-  "assets": { "directory": "apps/web", "binding": "ASSETS" },
-  "durable_objects": { "bindings": [{ "name": "ROOMS", "class_name": "Room" }] },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }]
-}
